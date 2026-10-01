@@ -1,25 +1,31 @@
-package com.curelingo.curelingo.mongodb;
+package com.curelingo.curelingo.hospital;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
 @Getter
+@Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class HospitalDto {
     private String hpid;
     private String dutyName;
     private String dutyAddr;
     private String dutyDivNam;
-    private List<String> departments; // 진료과목 목록
+    private List<String> departments;
     private String dutyEryn;
     private String dutyTel1;
     private String dutyTel3;
     private String dutyEtc;
-    private String dutyNameEn; // 기관명 (영문)
-    private String dutyAddrEn; // 주소 (영문)
-    private Boolean isOpen; // 현재 운영 여부
+    private String dutyNameEn;
+    private String dutyAddrEn;
+    private Boolean isOpen;
     private String dutyTime1s;
     private String dutyTime1c;
     private String dutyTime2s;
