@@ -20,7 +20,6 @@ public class Clinic {
     private String addrEn;       // 주소 (영문)
     private double lat;          // 위도
     private double lng;          // 경도
-    private String h3Cell;       // H3 셀 주소
     private String type;         // 병원 종류 (예: 병원, 의원, 치과 등)
     private List<String> departments; // 진료과목 목록 (D001~D032)
     
@@ -41,4 +40,4 @@ public class Clinic {
     private String dutyTime7c; // 진료시간(일요일) close
     private String dutyTime8s; // 진료시간(공휴일) open
     private String dutyTime8c; // 진료시간(공휴일) close
-} 
+}
