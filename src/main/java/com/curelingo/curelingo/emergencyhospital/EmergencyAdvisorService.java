@@ -1,138 +1,63 @@
 package com.curelingo.curelingo.emergencyhospital;
 
-import com.curelingo.curelingo.emergencyhospital.domain.Hospital;
 import com.curelingo.curelingo.emergencyhospital.dto.EmergencyBedStatus;
-import com.curelingo.curelingo.emergencyhospital.dto.NearbyHospitalDto;
-import com.curelingo.curelingo.location.H3ResolutionUtil;
-import com.curelingo.curelingo.location.H3Service;
-import com.curelingo.curelingo.mongodb.repository.EmergencyBedStatusRepository;
-import com.curelingo.curelingo.mongodb.repository.HospitalRepository;
-import com.curelingo.curelingo.emergencyhospital.mapper.HospitalMapper;
-import com.curelingo.curelingo.mongodb.MongoHospital;
+import com.curelingo.curelingo.publicdata.mysql.db.EmergencyHospitalRepository;
+import com.curelingo.curelingo.publicdata.mysql.db.NearbyEmergencyHospital;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmergencyAdvisorService {
+    private static final int NEARBY_RADIUS_METERS = 10_000;
 
-    private final H3Service h3Service;
-    private final HospitalRepository hospitalRepository;
-    private final EmergencyBedStatusRepository bedStatusRepository;
+    private final EmergencyHospitalRepository emergencyHospitalRepository;
 
     public List<Map<String, Object>> findNearbyERs(double lat, double lon, String language) {
-        double radiusKm = 10.0; // 반경 10km 고정
-        int res = H3ResolutionUtil.chooseResolution(radiusKm);
-        int k = H3ResolutionUtil.kFromRadius(radiusKm, res);
-        log.info("[Emergency] 반경 {}km, 언어: {} → res={}, k={}", radiusKm, language, res, k);
-
-        List<MongoHospital> mongoHospitals = hospitalRepository.findByDutyEryn("1");
-        List<Hospital> hospitals = mongoHospitals.stream()
-                .map(m -> Hospital.builder()
-                        .hpid(m.getHpid())
-                        .name(m.getDutyName())
-                        .nameEn(m.getDutyNameEn())
-                        .addr(m.getDutyAddr())
-                        .addrEn(m.getDutyAddrEn())
-                        .tel(m.getDutyTel1())
-                        .lat(m.getWgs84Lat())
-                        .lng(m.getWgs84Lon())
-                        .build())
-                .toList();
-
-        String userCell = h3Service.latLngToCell(lat, lon, res);
-        List<String> neighborCells = h3Service.gridDisk(userCell, k);
-        log.info("[Emergency] gridDisk 결과 셀 개수: {}", neighborCells.size());
-
-        List<Hospital> candidates = new ArrayList<>();
-        for (Hospital h : hospitals) {
-            String hospCell = h3Service.latLngToCell(h.getLat(), h.getLng(), res);
-            if (neighborCells.contains(hospCell)) {
-                candidates.add(h);
+        List<NearbyEmergencyHospital> nearby = emergencyHospitalRepository.findNearbyEmergencyHospitals(
+                lat, lon, NEARBY_RADIUS_METERS);
+        List<Map<String, Object>> result = new ArrayList<>(nearby.size());
+        for (NearbyEmergencyHospital hospital : nearby) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            if ("en".equals(language)) {
+                item.put("nameEn", firstNonBlank(hospital.nameEn(), hospital.name()));
+                item.put("addressEn", firstNonBlank(hospital.addressEn(), hospital.address()));
+            } else {
+                item.put("name", hospital.name());
+                item.put("address", hospital.address());
             }
+            item.put("hpid", hospital.hpid());
+            item.put("lat", hospital.latitude());
+            item.put("lng", hospital.longitude());
+            item.put("distanceKm", hospital.distanceKm());
+            result.add(item);
         }
-        log.info("[Emergency] H3 후보 응급실 개수: {}", candidates.size());
-
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Hospital h : candidates) {
-            double distanceKm = h3Service.calcDistanceKm(lat, lon, h.getLat(), h.getLng());
-            log.debug("[Emergency] {} 거리: {}km", h.getName(), distanceKm);
-            
-            if (distanceKm <= radiusKm) {
-                Map<String, Object> hospitalData = new HashMap<>();
-                
-                if ("en".equals(language)) {
-                    // 영어 응답
-                    hospitalData.put("nameEn", h.getNameEn() != null ? h.getNameEn() : h.getName());
-                    hospitalData.put("addressEn", h.getAddrEn() != null ? h.getAddrEn() : h.getAddr());
-                } else {
-                    // 한국어 응답 (기본값)
-                    hospitalData.put("name", h.getName());
-                    hospitalData.put("address", h.getAddr());
-                }
-                
-                hospitalData.put("hpid", h.getHpid());
-                hospitalData.put("lat", h.getLat());
-                hospitalData.put("lng", h.getLng());
-                hospitalData.put("distanceKm", distanceKm);
-                
-                result.add(hospitalData);
-            }
-        }
-        
-        log.info("[Emergency] 반경 {}km 이내 최종 응급실 개수: {}", radiusKm, result.size());
-        result.sort(Comparator.comparingDouble(data -> (Double) data.get("distanceKm")));
+        log.info("[Emergency] 반경 10km 내 응급실 검색 결과: {}개", result.size());
         return result;
     }
 
     public List<EmergencyBedStatus> findNearbyEmergencyBeds(double lat, double lng, double radiusKm) {
-        int res = H3ResolutionUtil.chooseResolution(radiusKm);
-        int k = H3ResolutionUtil.kFromRadius(radiusKm, res);
-        log.info("[BedSearch] Search area: {} km, H3 resolution: {}, k: {}", radiusKm, res, k);
+        int radiusMeters = toRadiusMeters(radiusKm);
+        List<EmergencyBedStatus> result = emergencyHospitalRepository.findNearbyEmergencyBeds(lat, lng, radiusMeters);
+        log.info("[BedSearch] 반경 {}km 내 응급 병상 검색 결과: {}개", radiusKm, result.size());
+        return result;
+    }
 
-        List<MongoHospital> mongoHospitals = hospitalRepository.findByDutyEryn("1");
-        List<Hospital> hospitals = mongoHospitals.stream()
-                .map(m -> Hospital.builder()
-                        .hpid(m.getHpid())
-                        .name(m.getDutyName())
-                        .tel(m.getDutyTel1())
-                        .addr(m.getDutyAddr())
-                        .lat(m.getWgs84Lat())
-                        .lng(m.getWgs84Lon())
-                        .build())
-                .toList();
+    private static int toRadiusMeters(double radiusKm) {
+        if (!Double.isFinite(radiusKm) || radiusKm < 0 || radiusKm > Integer.MAX_VALUE / 1000.0) {
+            throw new IllegalArgumentException("radiusKm must be a finite non-negative radius");
+        }
+        return (int) Math.round(radiusKm * 1000.0);
+    }
 
-        String userCell = h3Service.latLngToCell(lat, lng, res);
-        List<String> neighborCells = h3Service.gridDisk(userCell, k);
-
-        List<Hospital> candidates = hospitals.stream()
-                .filter(h -> {
-                    String cell = h3Service.latLngToCell(h.getLat(), h.getLng(), res);
-                    double dist = h3Service.calcDistanceKm(lat, lng, h.getLat(), h.getLng());
-                    return neighborCells.contains(cell) && dist <= radiusKm;
-                })
-                .toList();
-
-        List<String> hpidList = candidates.stream().map(Hospital::getHpid).toList();
-
-        // 거리 정보 맵핑
-        Map<String, Double> hpidToDistance = candidates.stream()
-                .collect(Collectors.toMap(Hospital::getHpid,
-                        h -> h3Service.calcDistanceKm(lat, lng, h.getLat(), h.getLng())));
-
-        List<EmergencyBedStatus> beds = bedStatusRepository.findByHpidIn(hpidList);
-        beds.forEach(b -> b.setDistanceKm(hpidToDistance.getOrDefault(b.getHpid(), null)));
-
-        // 거리 기준 정렬
-        List<EmergencyBedStatus> sorted = beds.stream()
-                .sorted(Comparator.comparingDouble(b -> hpidToDistance.getOrDefault(b.getHpid(), Double.MAX_VALUE)))
-                .toList();
-
-        return sorted;
+    private static String firstNonBlank(String preferred, String fallback) {
+        return preferred == null || preferred.isBlank() ? fallback : preferred;
     }
 }

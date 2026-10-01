@@ -3,62 +3,27 @@ package com.curelingo.curelingo.gemini.emergencyadvisor;
 import com.curelingo.curelingo.gemini.GeminiRestClient;
 import com.curelingo.curelingo.gemini.prompt.GeminiEmergencyAdvisorPromptBuilder;
 import com.curelingo.curelingo.emergencyhospital.dto.EmergencyBedStatus;
-import com.curelingo.curelingo.mongodb.repository.EmergencyBedStatusRepository;
-import com.curelingo.curelingo.location.H3ResolutionUtil;
-import com.curelingo.curelingo.location.H3Service;
-import com.curelingo.curelingo.mongodb.repository.HospitalRepository;
-import com.curelingo.curelingo.mongodb.MongoHospital;
-import com.curelingo.curelingo.emergencyhospital.domain.Hospital;
+import com.curelingo.curelingo.publicdata.mysql.db.EmergencyHospitalRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class GeminiEmergencyAdvisorService {
 
     private final GeminiRestClient geminiRestClient;
-    private final EmergencyBedStatusRepository bedStatusRepository;
-    private final HospitalRepository hospitalRepository;
-    private final H3Service h3Service;
+    private final EmergencyHospitalRepository emergencyHospitalRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<EmergencyBedStatus> findNearbyEmergencyBeds(double lat, double lng, double radiusKm) {
-        int res = H3ResolutionUtil.chooseResolution(radiusKm);
-        int k = H3ResolutionUtil.kFromRadius(radiusKm, res);
-        List<MongoHospital> mongoHospitals = hospitalRepository.findByDutyEryn("1");
-        List<Hospital> hospitals = mongoHospitals.stream()
-                .map(m -> Hospital.builder()
-                        .hpid(m.getHpid())
-                        .name(m.getDutyName())
-                        .tel(m.getDutyTel1())
-                        .addr(m.getDutyAddr())
-                        .lat(m.getWgs84Lat())
-                        .lng(m.getWgs84Lon())
-                        .build())
-                .toList();
-        String userCell = h3Service.latLngToCell(lat, lng, res);
-        List<String> neighborCells = h3Service.gridDisk(userCell, k);
-        List<Hospital> candidates = hospitals.stream()
-                .filter(h -> {
-                    String cell = h3Service.latLngToCell(h.getLat(), h.getLng(), res);
-                    double dist = h3Service.calcDistanceKm(lat, lng, h.getLat(), h.getLng());
-                    return neighborCells.contains(cell) && dist <= radiusKm;
-                })
-                .toList();
-        List<String> hpidList = candidates.stream().map(Hospital::getHpid).toList();
-        Map<String, Double> hpidToDistance = candidates.stream()
-                .collect(Collectors.toMap(Hospital::getHpid,
-                        h -> h3Service.calcDistanceKm(lat, lng, h.getLat(), h.getLng())));
-        List<EmergencyBedStatus> beds = bedStatusRepository.findByHpidIn(hpidList);
-        beds.forEach(b -> b.setDistanceKm(hpidToDistance.getOrDefault(b.getHpid(), null)));
-        return beds.stream()
-                .sorted(Comparator.comparingDouble(b -> hpidToDistance.getOrDefault(b.getHpid(), Double.MAX_VALUE)))
-                .toList();
+        if (!Double.isFinite(radiusKm) || radiusKm < 0 || radiusKm > Integer.MAX_VALUE / 1000.0) {
+            throw new IllegalArgumentException("radiusKm must be a finite non-negative radius");
+        }
+        return emergencyHospitalRepository.findNearbyEmergencyBeds(lat, lng, (int) Math.round(radiusKm * 1000.0));
     }
 
     public GeminiEmergencyRecommendationResponse recommendNearbyEmergency(
