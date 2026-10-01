@@ -3,14 +3,12 @@ package com.curelingo.curelingo.emergencyhospital.dto;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "emergency_bed_status")
 public class EmergencyBedStatus {
     private String hpid;                // 기관 ID
     private String dutyName;            // 기관명
