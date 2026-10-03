@@ -4,43 +4,59 @@ services:
     container_name: curelingo-backend
     ports:
       - "8080:8080"
+      - "9464:9464"
     environment:
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-curelingo}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-curelingo}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-curelingo-local}
     env_file:
       - .env
+    depends_on:
+      mysql:
+        condition: service_healthy
     networks:
       - curelingo-network
 
-#  sonarqube:
-#    image: sonarqube:community
-#    container_name: sonarqube
-#    ports:
-#      - "9000:9000"
-#    environment:
-#      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
-#    volumes:
-#      - sonarqube_data:/opt/sonarqube/data
-#      - sonarqube_extensions:/opt/sonarqube/extensions
-#      - sonarqube_logs:/opt/sonarqube/logs
-
-  mongo:
-    image: mongo:latest
-    container_name: mongo
+  mysql:
+    image: mysql:8.4
+    container_name: curelingo-mysql
     ports:
-      - "27017:27017"
+      - "3307:3306"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-curelingo}
+      MYSQL_USER: ${MYSQL_USER:-curelingo}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-curelingo-local}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-curelingo-local-root}
     volumes:
-      - mongo_data:/data/db
+      - mysql_data:/var/lib/mysql
+      - ./src/main/resources/db/mysql-public-data-schema.sql:/docker-entrypoint-initdb.d/01-public-data-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - curelingo-network
+
+  mysql-importer:
+    build: .
+    profiles: [mysql-tools]
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql-sync
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-curelingo}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-curelingo}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-curelingo-local}
+    depends_on:
+      mysql:
+        condition: service_healthy
     networks:
       - curelingo-network
 
 volumes:
-#  sonarqube_data:
-#  sonarqube_extensions:
-#  sonarqube_logs:
-  mongo_data:
+  mysql_data:
 
 networks:
   curelingo-network:
