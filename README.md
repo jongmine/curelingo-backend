@@ -12,7 +12,7 @@ Curelingo - Backend
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white"/>
   <img src="https://img.shields.io/badge/Spring_Boot-3.4.5-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white"/>
-  <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/>
+  <img src="https://img.shields.io/badge/MySQL-8.4-4479A1?style=for-the-badge&logo=mysql&logoColor=white"/>
   <img src="https://img.shields.io/badge/Gemini_AI-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white"/>
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"/>
 </p>
@@ -83,10 +83,10 @@ Curelingo - Backend
 |------|------|
 | **Language** | Java 17 |
 | **Framework** | Spring Boot 3.4.5 |
-| **Database** | MongoDB, H2 |
+| **Database** | MySQL 8.4, JDBC |
 | **AI** | Google Gemini API |
 | **Translation** | Google Translate API |
-| **Location** | Uber H3 (Hexagonal Indexing) |
+| **Location** | MySQL Spatial Index, `ST_Distance_Sphere` |
 | **API Docs** | Swagger (SpringDoc OpenAPI) |
 | **DevOps** | Docker, Docker Compose, Nginx |
 | **SSL** | Let's Encrypt (Certbot) |
@@ -120,7 +120,8 @@ Curelingo - Backend
 ### 사전 요구사항
 - Java 17+
 - Docker & Docker Compose
-- MongoDB
+- E-Gen 공공데이터 API 키
+- Gemini 및 Google Translate API 키
 
 ### 환경 변수 설정
 ```bash
@@ -128,9 +129,11 @@ Curelingo - Backend
 SPRING_PROFILES_ACTIVE=dev
 GEMINI_API_KEY=your_gemini_api_key
 GOOGLE_TRANSLATION_API_KEY=your_google_translate_api_key
-MONGO_INITDB_ROOT_USERNAME=admin
-MONGO_INITDB_ROOT_PASSWORD=password
 EGEN_API_KEY=your_egen_api_key
+MYSQL_DATABASE=curelingo
+MYSQL_USER=curelingo
+MYSQL_PASSWORD=local_mysql_password
+MYSQL_ROOT_PASSWORD=local_mysql_root_password
 ```
 
 ### 개발 환경 실행
@@ -139,12 +142,29 @@ EGEN_API_KEY=your_egen_api_key
 git clone https://github.com/Unithon-INU/2025_UNITHON_TEAM_5_BE.git
 cd 2025_UNITHON_TEAM_5_BE
 
-# Docker Compose로 실행 (개발)
-docker-compose -f docker-compose.dev.yaml up -d
+# DB 시작
+docker compose -f docker-compose.dev.yaml up -d mysql
+
+# 공공 병원·진료과·응급 병상 snapshot 적재
+docker compose -f docker-compose.dev.yaml --profile mysql-tools run --rm mysql-importer
+
+# API 서버 시작
+docker compose -f docker-compose.dev.yaml up -d backend
 
 # 또는 Gradle로 직접 실행
+docker compose -f docker-compose.dev.yaml up -d mysql
 ./gradlew bootRun
 ```
+
+병원 검색은 MySQL의 공간 인덱스로 사각형 후보를 좁힌 다음 `ST_Distance_Sphere`로 실제 반경을 판정합니다. 병원 ID와 진료과 관계는 정규화된 테이블의 기본 키와 외래 키로 관리합니다.
+
+초기 snapshot 적재는 별도 일회성 컨테이너로 실행합니다. E-Gen API 키가 설정되어 있어야 합니다.
+
+```bash
+docker compose -f docker-compose.dev.yaml --profile mysql-tools run --rm mysql-importer
+```
+
+적재기는 병원·진료과·응급 병상 feed의 건수와 `hpid` 관계를 검증한 다음 snapshot을 트랜잭션으로 교체합니다. 적재 실패 시 staging 행을 버리고 마지막 성공 snapshot을 유지합니다. 실시간 병상 feed는 애플리케이션 시작 시와 5분마다 갱신합니다. 개발용 MySQL은 Docker Compose가 스키마를 초기화합니다. 프로덕션은 별도 MySQL VM 또는 관리형 인스턴스를 사용할 수 있으며, `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`를 앱에 설정하고 스키마 SQL을 먼저 적용합니다. DB와 Actuator 포트는 사설 네트워크에서만 접근할 수 있도록 구성합니다.
 
 ### 프로덕션 환경 실행
 ```bash
@@ -154,6 +174,9 @@ chmod +x init-letsencrypt.sh
 
 # Docker Compose로 실행 (프로덕션)
 docker-compose -f docker-compose.prod.yaml up -d
+
+# MySQL이 초기화된 뒤 최초 공공데이터 snapshot 적재
+docker compose -f docker-compose.prod.yaml --profile mysql-tools run --rm mysql-importer
 ```
 
 <br>
@@ -170,8 +193,8 @@ src/main/java/com/curelingo/curelingo/
 ├── emergencyhospital/      # 응급실 검색 서비스
 ├── clinic/                 # 병원 검색 서비스
 ├── egen/                   # 공공데이터 API 연동
-├── mongodb/                # MongoDB 저장소
-├── location/               # 위치 서비스 (H3)
+├── hospital/               # 병원 상세정보 API
+├── publicdata/mysql/       # 공공데이터 적재 및 공간 조회
 └── translation/            # 번역 서비스
 ```
 
