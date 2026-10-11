@@ -139,8 +139,8 @@ MYSQL_ROOT_PASSWORD=local_mysql_root_password
 ### 개발 환경 실행
 ```bash
 # 저장소 클론
-git clone https://github.com/Unithon-INU/2025_UNITHON_TEAM_5_BE.git
-cd 2025_UNITHON_TEAM_5_BE
+git clone -b release-v2 https://github.com/jongmine/curelingo-backend.git
+cd curelingo-backend
 
 # DB 시작
 docker compose -f docker-compose.dev.yaml up -d mysql
@@ -164,7 +164,7 @@ docker compose -f docker-compose.dev.yaml up -d mysql
 docker compose -f docker-compose.dev.yaml --profile mysql-tools run --rm mysql-importer
 ```
 
-적재기는 병원·진료과·응급 병상 feed의 건수와 `hpid` 관계를 검증한 다음 snapshot을 트랜잭션으로 교체합니다. 적재 실패 시 staging 행을 버리고 마지막 성공 snapshot을 유지합니다. 실시간 병상 feed는 애플리케이션 시작 시와 5분마다 갱신합니다. 개발용 MySQL은 Docker Compose가 스키마를 초기화합니다. 프로덕션은 별도 MySQL VM 또는 관리형 인스턴스를 사용할 수 있으며, `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`를 앱에 설정하고 스키마 SQL을 먼저 적용합니다. DB와 Actuator 포트는 사설 네트워크에서만 접근할 수 있도록 구성합니다.
+적재기는 병원·진료과·응급 병상 feed의 건수와 `hpid` 관계를 검증한 다음 snapshot을 트랜잭션으로 교체합니다. 적재 실패 시 staging 행을 버리고 마지막 성공 snapshot을 유지합니다. 병상 주기 수집은 기본 비활성화입니다. `CURELINGO_BED_REFRESH_ENABLED=true`를 설정한 수집 프로세스 한 개에서 기본 3분 fixed delay로 실행하며, 전체 페이지를 검증한 뒤 현재값을 한 트랜잭션으로 반영합니다. 재시도를 포함해 설정한 일일 호출 예산을 DB에서 예약합니다. 이 주기는 제공자의 갱신 보장 주기가 아닙니다. 개발용 MySQL은 Docker Compose가 스키마를 초기화합니다. 프로덕션은 별도 MySQL VM 또는 관리형 인스턴스를 사용할 수 있으며, `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`를 앱에 설정하고 스키마 SQL을 먼저 적용합니다. DB와 Actuator 포트는 사설 네트워크에서만 접근할 수 있도록 구성합니다.
 
 ### 프로덕션 환경 실행
 ```bash
@@ -231,3 +231,19 @@ src/main/java/com/curelingo/curelingo/
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+
+## 성능 개선 및 데이터 수집 검증
+
+- [포트폴리오](docs/portfolio.md): 주변 병원 검색 최적화와 병상 수집 실패 대응의 문제·해결·결과
+- [최종 구현과 재현 근거](docs/verification.md): SQL/DDL, 3회별 원시 k6 결과, EXPLAIN ANALYZE, 수집 장애 시나리오 및 실제 API 검증
+- [기존 DB 마이그레이션](src/main/resources/db/20261011-bed-refresh.sql): 기존 DB에서는 새 앱 실행 전에 한 번 적용합니다. CREATE TABLE IF NOT EXISTS는 기존 hospital 인덱스를 추가하지 않으므로 ALTER 단계가 필요합니다.
+
+주변 병원 검색은 진료과 조건을 먼저 적용한 후보를 좁은 CTE로 유지하고, 정확한 반경 판정 후 상세 정보를 연결해 최대 50건을 반환합니다. 응급기관 목록은 응급실 운영 복합 인덱스로 기관을 선별한 뒤 위치를 조회하며, 병상 LEFT JOIN으로 정보가 없는 기관도 포함합니다. 최근 수집/오래된 수집/정보 없음은 수집 시각으로 구분하고 원천 갱신 시각을 별도로 제공합니다.
+
+```bash
+# 병상 현재값만 일회성 갱신 (초기 전체 적재와 구분)
+docker compose -f docker-compose.dev.yaml --profile mysql-tools run --rm -e SPRING_PROFILES_ACTIVE=bed-sync mysql-importer
+```
+
+성능 수치는 고정 검색 조건의 과거 반복 측정 결과이며 이번 원본 통합 코드의 재측정 결과나 실제 서비스 피크를 뜻하지 않습니다. 현재 소스는 Spring Boot3.4.5이고 해당 성능 측정 앱은3.4.9였습니다. 상세 조건과 한계는 검증 문서에 함께 적었습니다.
