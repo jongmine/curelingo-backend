@@ -1,0 +1,7 @@
+{
+  "before_rows": 50,
+  "after_rows": 50,
+  "ordered_hpid_equal": true,
+  "max_absolute_distance_difference_m": 0.0,
+  "data_source": "same GCP MySQL snapshot; sequential read-only SELECTs; Seoul City Hall, 3 km, D001, limit 50"
+}

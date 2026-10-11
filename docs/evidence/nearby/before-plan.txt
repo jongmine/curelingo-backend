@@ -1,0 +1,13 @@
+-> Limit: 50 row(s)  (actual time=69.1..69.1 rows=50 loops=1)
+    -> Sort: distance_meters, h.hpid, limit input to 50 row(s) per chunk  (actual time=69.1..69.1 rows=50 loops=1)
+        -> Stream results  (cost=28.6 rows=5.5) (actual time=2.61..68.5 rows=229 loops=1)
+            -> Nested loop left join  (cost=28.6 rows=5.5) (actual time=2.53..63.2 rows=229 loops=1)
+                -> Nested loop inner join  (cost=25.3 rows=5.5) (actual time=2.35..62.2 rows=229 loops=1)
+                    -> Nested loop inner join  (cost=15.3 rows=11) (actual time=2.04..51.4 rows=229 loops=1)
+                        -> Filter: (mbrcontains(<cache>(st_geomfromtext('POLYGON((126.94394304 37.53951466, 127.01205696 37.53951466, 127.01205696 37.59348534, 126.94394304 37.59348534, 126.94394304 37.53951466))',4326,'axis-order=long-lat')),l.location) and (st_distance_sphere(l.location,<cache>(st_geomfromtext('POINT(126.9780 37.5665)',4326,'axis-order=long-lat'))) <= 3000))  (cost=5.21 rows=11) (actual time=1.87..38.1 rows=1041 loops=1)
+                            -> Index range scan on l using idx_hospital_location over (location unprintable_geometry_value)  (cost=5.21 rows=11) (actual time=1.46..17.7 rows=1462 loops=1)
+                        -> Single-row covering index lookup on hd using PRIMARY (hpid=l.hpid, department_code='D001')  (cost=0.826 rows=1) (actual time=0.0126..0.0126 rows=0.22 loops=1041)
+                    -> Filter: (h.`active` = true)  (cost=0.814 rows=0.5) (actual time=0.0462..0.0464 rows=1 loops=229)
+                        -> Single-row index lookup on h using PRIMARY (hpid=l.hpid)  (cost=0.814 rows=1) (actual time=0.0454..0.0454 rows=1 loops=229)
+                -> Single-row index lookup on b using PRIMARY (hpid=l.hpid)  (cost=0.518 rows=1) (actual time=0.00436..0.00436 rows=0.0218 loops=229)
+

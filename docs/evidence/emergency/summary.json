@@ -1,0 +1,19 @@
+{
+  "warmups": [
+    256.0,
+    9.76
+  ],
+  "spatial_first_ms": [
+    256.0,
+    252.0,
+    257.0
+  ],
+  "emergency_first_ms": [
+    9.18,
+    8.91,
+    9.18
+  ],
+  "spatial_median_ms": 256.0,
+  "emergency_median_ms": 9.18,
+  "result_parity_rows": 46
+}

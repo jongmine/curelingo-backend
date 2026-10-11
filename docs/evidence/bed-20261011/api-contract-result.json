@@ -1,0 +1,1 @@
+{"passed": true, "returnedHospitalCount": 3, "publicApiCalls": 0, "clinicSearchPassed": true, "states": ["RECENTLY_FETCHED", "STALE", "NOT_AVAILABLE"]}

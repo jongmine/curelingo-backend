@@ -1,0 +1,121 @@
+[
+  {
+    "scenario": "normal",
+    "passed": true,
+    "status": "SUCCEEDED",
+    "attempts": 1,
+    "unchanged_on_failure": null
+  },
+  {
+    "scenario": "retry-503",
+    "passed": true,
+    "status": "SUCCEEDED",
+    "attempts": 2,
+    "unchanged_on_failure": null
+  },
+  {
+    "scenario": "duplicate",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "incomplete",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "old-timestamp",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "unknown-hpid-rollback",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "api-22",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "empty",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "two-pages",
+    "passed": true,
+    "status": "SUCCEEDED",
+    "attempts": 2,
+    "unchanged_on_failure": null
+  },
+  {
+    "scenario": "page-two-error",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 2,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "timeout",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 3,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "api-23-retry",
+    "passed": true,
+    "status": "SUCCEEDED",
+    "attempts": 2,
+    "unchanged_on_failure": null
+  },
+  {
+    "scenario": "missing-hpid",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "invalid-count",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "invalid-time",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 1,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "changed-total",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 2,
+    "unchanged_on_failure": true
+  },
+  {
+    "scenario": "quota-exhausted",
+    "passed": true,
+    "status": "FAILED",
+    "attempts": 0,
+    "unchanged_on_failure": true
+  }
+]

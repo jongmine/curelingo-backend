@@ -1,0 +1,7 @@
+group,repeat,http_p95_ms,sql_mean_elapsed_ms,examined_rows_per_statement,db_vm_cpu_median_percent
+before,1,372.9,139.0,1975,83.9
+before,2,198.5,90.4,1975,80.8
+before,3,358.3,140.3,1974,84.2
+after,1,131.7,47.1,619,49.3
+after,2,128.6,47.4,619,48.9
+after,3,120.1,46.2,619,50.2
