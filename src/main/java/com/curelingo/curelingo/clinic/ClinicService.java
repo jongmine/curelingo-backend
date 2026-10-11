@@ -47,6 +47,7 @@ public class ClinicService {
             hospitalData.put("lat", clinic.getLat());
             hospitalData.put("lng", clinic.getLng());
             hospitalData.put("distanceKm", entry.distanceKm());
+            hospitalData.put("availableGeneralBeds", entry.availableGeneralBeds());
             hospitalData.put("isOpen", isClinicOpen(clinic, clientTime));
             putDutyTimes(hospitalData, clinic);
             result.add(hospitalData);

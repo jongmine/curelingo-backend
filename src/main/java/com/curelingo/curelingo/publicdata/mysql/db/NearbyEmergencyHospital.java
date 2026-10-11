@@ -9,6 +9,7 @@ public record NearbyEmergencyHospital(
         String telephone,
         double latitude,
         double longitude,
-        double distanceKm
+        double distanceKm,
+        com.curelingo.curelingo.emergencyhospital.dto.EmergencyBedStatus bedStatus
 ) {
 }

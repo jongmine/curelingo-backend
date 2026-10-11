@@ -37,6 +37,12 @@ public class EmergencyAdvisorService {
             item.put("lat", hospital.latitude());
             item.put("lng", hospital.longitude());
             item.put("distanceKm", hospital.distanceKm());
+            item.put("telephone", hospital.telephone());
+            item.put("beds", hospital.bedStatus().getBeds());
+            item.put("sourceUpdatedAt", hospital.bedStatus().getSourceUpdatedAt());
+            item.put("fetchedAt", hospital.bedStatus().getFetchedAt());
+            item.put("sourceAgeSeconds", hospital.bedStatus().getSourceAgeSeconds());
+            item.put("observationStatus", hospital.bedStatus().getObservationStatus());
             result.add(item);
         }
         log.info("[Emergency] 반경 10km 내 응급실 검색 결과: {}개", result.size());

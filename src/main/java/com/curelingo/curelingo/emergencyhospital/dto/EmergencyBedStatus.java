@@ -16,6 +16,11 @@ public class EmergencyBedStatus {
     private Double distanceKm;          // 거리
     private LocalDateTime updatedAt;    // 정보 입력 일시
 
+    private java.time.Instant fetchedAt;
+    private java.time.Instant sourceUpdatedAt;
+    private Long sourceAgeSeconds;
+    private String observationStatus;
+
     private Beds beds;           // beds를 내부 클래스로 구성
 
     @Getter

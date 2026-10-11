@@ -45,12 +45,14 @@ public class HospitalSearchRepository {
                    h.duty_time_8s, h.duty_time_8c,
                    ST_Latitude(c.location) AS latitude,
                    ST_Longitude(c.location) AS longitude,
-                   c.distance_meters
+                   c.distance_meters, b.hvec AS available_general_beds
               FROM department_candidates c
               STRAIGHT_JOIN hospital h ON h.hpid = c.hpid
+              LEFT JOIN hospital_bed_status b ON b.hpid = c.hpid
              WHERE h.active = TRUE
                AND c.distance_meters <= :radiusMeters
              ORDER BY c.distance_meters, h.hpid
+             LIMIT 50
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -107,7 +109,7 @@ public class HospitalSearchRepository {
                     .dutyTime8c(rs.getString("duty_time_8c"))
                     .build();
             return new NearbyClinicResult(clinic, rs.getDouble("distance_meters") / 1000.0,
-                    clinic.getNameEn(), clinic.getAddrEn());
+                    clinic.getNameEn(), clinic.getAddrEn(), (Integer) rs.getObject("available_general_beds"));
         });
     }
 }
