@@ -7,6 +7,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.DecimalMax;
+
 import java.util.List;
 import java.util.Map;
 
@@ -20,8 +23,8 @@ public interface ClinicSwagger {
                      "현재 운영 여부(isOpen)가 포함됩니다."
     )
     ResponseEntity<List<Map<String, Object>>> getNearbyClinicsByDepartment(
-            @Parameter(description = "현재 위도", example = "37.5154") @RequestParam double lat,
-            @Parameter(description = "현재 경도", example = "127.0346") @RequestParam double lng,
+            @Parameter(description = "현재 위도", example = "37.5154") @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") double lat,
+            @Parameter(description = "현재 경도", example = "127.0346") @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") double lng,
             @Parameter(description = "진료과 코드 (D001~D032)", example = "D001") @RequestParam String department,
             @Parameter(description = "언어 (ko: 한국어, en: 영어)", example = "ko") @RequestParam(defaultValue = "ko") String language,
             @Parameter(description = "현재 시간 (ISO 8601 형식, 예: 2024-01-15T14:30:00). 생략 시 서버 현재 시간 사용", example = "2024-01-15T14:30:00")

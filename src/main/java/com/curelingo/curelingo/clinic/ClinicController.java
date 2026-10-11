@@ -1,8 +1,6 @@
 package com.curelingo.curelingo.clinic;
 
 import com.curelingo.curelingo.clinic.dto.NearbyClinicDto;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -27,8 +25,8 @@ public class ClinicController implements ClinicSwagger {
 
     @GetMapping("/department")
     public ResponseEntity<List<Map<String, Object>>> getNearbyClinicsByDepartment(
-            @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") double lat,
-            @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") double lng,
+            @RequestParam double lat,
+            @RequestParam double lng,
             @RequestParam String department,
             @RequestParam(defaultValue = "ko") String language,
             @RequestParam(required = false) String currentTime
