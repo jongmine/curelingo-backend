@@ -247,3 +247,5 @@ docker compose -f docker-compose.dev.yaml --profile mysql-tools run --rm -e SPRI
 ```
 
 성능 수치는 고정 검색 조건의 과거 반복 측정 결과이며 이번 원본 통합 코드의 재측정 결과나 실제 서비스 피크를 뜻하지 않습니다. 현재 소스는 Spring Boot3.4.5이고 해당 성능 측정 앱은3.4.9였습니다. 상세 조건과 한계는 검증 문서에 함께 적었습니다.
+
+포트폴리오의 그래프와 검증 기록은 [프로젝트 사례 문서](docs/portfolio.md)에서 함께 확인할 수 있습니다.

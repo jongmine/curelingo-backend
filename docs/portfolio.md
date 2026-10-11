@@ -30,37 +30,39 @@
 
 **변경 전 — HTTP 지연 / DB VM CPU**
 
-	
-		![grafana-before-latency-actual](evidence/images/grafana-before-latency-actual.jpg)
-	
-	
-		![grafana-before-cpu-actual](evidence/images/grafana-before-cpu-actual.jpg)
-	
+
+![grafana-before-latency-actual](evidence/images/grafana-before-latency-actual.jpg)
+
+
+![grafana-before-cpu-actual](evidence/images/grafana-before-cpu-actual.jpg)
+
 
 **변경 후 — HTTP 지연 / DB VM CPU**
 
-	
-		![grafana-after-latency-actual](evidence/images/grafana-after-latency-actual.jpg)
-	
-	
-		![grafana-after-cpu-actual](evidence/images/grafana-after-cpu-actual.jpg)
-	
+
+![grafana-after-latency-actual](evidence/images/grafana-after-latency-actual.jpg)
+
+
+![grafana-after-cpu-actual](evidence/images/grafana-after-cpu-actual.jpg)
+
 
 *지연 패널에서는 k6 p95, CPU 패널에서는 DB VM 선을 확인합니다. 표기 수치는 실행 전체 k6 summary의 p95이며 Grafana의 시간 구간별 p95와 구분합니다. 그림은 대표 실행, 성과는 3회 중앙값입니다. CPU 패널의 Y축 범위가 다릅니다.*
 
 <details>
 <summary>측정 조건·3회 결과·진단 근거</summary>
-	서울시청 중심·3km·D001·50건, 각 60초, 앱·DB·부하 발생기 각각 2 vCPU/4GB, MySQL8.4.11, HikariCP 최대 풀 크기10. 병원79,019건·진료과 관계163,542건·병상416건 snapshot.
-	기준 p95: 372.9 / 198.5 / 358.3ms. 변경 p95: 131.7 / 128.6 / 120.1ms.
-	기준은 9월28일 24/28 RPS 단계 교차, 변경은 9월30일 매회 2 RPS 60초 워밍업과20초 대기. 날짜·순서가 달라 완전한 교차 A/B는 아닙니다. 28 RPS는 실제 사용자 피크가 아닌 진단 조건입니다.
-	이번 원본 프로젝트 통합 후 성능을 재측정한 값은 아닙니다. 당시 측정 SQL·원시 summary와 현재 구현을 각각 연결했습니다.
-	별도 9월29일 진단 실행의 p95 716.2ms·DB CPU 중앙값89.2%·HikariCP 대기 스레드 최대11개는 위 비교 기준값과 다릅니다.
-	![grafana-warm28-request-latency](evidence/images/grafana-warm28-request-latency.png)
-	![grafana-warm28-vm-loadgen](evidence/images/grafana-warm28-vm-loadgen.png)
-	![grafana-warm28-hikari-mysql](evidence/images/grafana-warm28-hikari-mysql.png)
-	![grafana-warm28-jvm-process](evidence/images/grafana-warm28-jvm-process.png)
-	이 네 장은 2026-09-29 16:25:36–16:27:19 UTC의 실제 과거 시계열입니다. 실패율 패널의 비율 축 설정과 5xx No data를 오류 0건의 근거로 사용하지 않았습니다.
-	[반복별 원시 결과와 측정 단위](https://github.com/jongmine/curelingo-backend/blob/release-v2/docs/verification.md)
+
+서울시청 중심·3km·D001·50건, 각 60초, 앱·DB·부하 발생기 각각 2 vCPU/4GB, MySQL8.4.11, HikariCP 최대 풀 크기10. 병원79,019건·진료과 관계163,542건·병상416건 snapshot.
+기준 p95: 372.9 / 198.5 / 358.3ms. 변경 p95: 131.7 / 128.6 / 120.1ms.
+기준은 9월28일 24/28 RPS 단계 교차, 변경은 9월30일 매회 2 RPS 60초 워밍업과20초 대기. 날짜·순서가 달라 완전한 교차 A/B는 아닙니다. 28 RPS는 실제 사용자 피크가 아닌 진단 조건입니다.
+이번 원본 프로젝트 통합 후 성능을 재측정한 값은 아닙니다. 당시 측정 SQL·원시 summary와 현재 구현을 각각 연결했습니다.
+별도 9월29일 진단 실행의 p95 716.2ms·DB CPU 중앙값89.2%·HikariCP 대기 스레드 최대11개는 위 비교 기준값과 다릅니다.
+![grafana-warm28-request-latency](evidence/images/grafana-warm28-request-latency.png)
+![grafana-warm28-vm-loadgen](evidence/images/grafana-warm28-vm-loadgen.png)
+![grafana-warm28-hikari-mysql](evidence/images/grafana-warm28-hikari-mysql.png)
+![grafana-warm28-jvm-process](evidence/images/grafana-warm28-jvm-process.png)
+이 네 장은 2026-09-29 16:25:36–16:27:19 UTC의 실제 과거 시계열입니다. 실패율 패널의 비율 축 설정과 5xx No data를 오류 0건의 근거로 사용하지 않았습니다.
+[반복별 원시 결과와 측정 단위](https://github.com/jongmine/curelingo-backend/blob/release-v2/docs/verification.md)
+
 </details>
 
 ---
@@ -91,31 +93,35 @@
 
 <details>
 <summary>검증 범위·수집 주기·저장 판단</summary>
-	[17개 검증 결과](https://github.com/jongmine/curelingo-backend/blob/release-v2/docs/evidence/bed-20261011/bed-sync-results.json) · [재현 스크립트](https://github.com/jongmine/curelingo-backend/blob/release-v2/scripts/verification/verify-bed-sync.py) · [실제 API 합성 응답](https://github.com/jongmine/curelingo-backend/blob/release-v2/docs/evidence/bed-20261011/api-contract-response.json)
-	2026-10-11 실제 MySQL과 원본 JAR로 정상4개/실패13개를 확인했습니다. 모든 장애·다중 수집 서버·강제 프로세스 종료를 검증한 것은 아닙니다.
-	최근/오래된 수집은 fetched_at 기준6분으로 구분합니다. 원천 정보의 나이는 sourceUpdatedAt/sourceAgeSeconds로 별도 제공하며 실제 수용 가능성을 보장하지 않습니다.
-	3분 fixed delay는 한 페이지 정상 수집 기준 하루 최대480회인 초기 정책입니다. 일일1,000회는 설정한 계정 예산이며 초기 적재·추가 페이지·재시도와 공유합니다. 제공자의 갱신 보장 주기나 공통 한도는 아닙니다.
-	스케줄은 기본 비활성화하고 DB당 수집 프로세스 한 개를 전제로 합니다. 같은 인증키를 쓰는 다른 클라이언트의 요청까지 이 예산이 통제하지는 않습니다.
-	현재 조회 요구에 맞춰 병상 현재값과 실행 이력을 저장했습니다. 과거 병상 감사·추세 분석 요구가 생기면 변경값 이력을 추가할 수 있습니다.
+
+[17개 검증 결과](https://github.com/jongmine/curelingo-backend/blob/release-v2/docs/evidence/bed-20261011/bed-sync-results.json) · [재현 스크립트](https://github.com/jongmine/curelingo-backend/blob/release-v2/scripts/verification/verify-bed-sync.py) · [실제 API 합성 응답](https://github.com/jongmine/curelingo-backend/blob/release-v2/docs/evidence/bed-20261011/api-contract-response.json)
+2026-10-11 실제 MySQL과 원본 JAR로 정상4개/실패13개를 확인했습니다. 모든 장애·다중 수집 서버·강제 프로세스 종료를 검증한 것은 아닙니다.
+최근/오래된 수집은 fetched_at 기준6분으로 구분합니다. 원천 정보의 나이는 sourceUpdatedAt/sourceAgeSeconds로 별도 제공하며 실제 수용 가능성을 보장하지 않습니다.
+3분 fixed delay는 한 페이지 정상 수집 기준 하루 최대480회인 초기 정책입니다. 일일1,000회는 설정한 계정 예산이며 초기 적재·추가 페이지·재시도와 공유합니다. 제공자의 갱신 보장 주기나 공통 한도는 아닙니다.
+스케줄은 기본 비활성화하고 DB당 수집 프로세스 한 개를 전제로 합니다. 같은 인증키를 쓰는 다른 클라이언트의 요청까지 이 예산이 통제하지는 않습니다.
+현재 조회 요구에 맞춰 병상 현재값과 실행 이력을 저장했습니다. 과거 병상 감사·추세 분석 요구가 생기면 변경값 이력을 추가할 수 있습니다.
+
 </details>
 
 ---
 
 <details>
 <summary>추가 SQL 개선: 응급실 운영 기관을 먼저 조회</summary>
-	### 문제 원인
-	![emergency-problem-simple](evidence/images/emergency-problem-simple.png)
-	1. 공간 후보14,756건에 대해 병원 기본키 탐색을 반복한 뒤 응급실 운영 여부를 검사했습니다.
-	2. 전국 병원79,019건 중 응급실 운영 기관은519건(약0.66%)이므로 이 조건부터 후보를 줄이는 경로를 비교했습니다.
-	3. 병상 정보가 없는 기관도 목록에 남겨야 하므로 병상 테이블부터 조회하는 방식은 채택하지 않았습니다.
-	### 해결 과정
-	![emergency-solution-simple](evidence/images/emergency-solution-simple.png)
-	1. (emergency_room_open, active, hpid) 복합 인덱스를 추가하고 hospital을 시작점으로 조회했습니다.
-	2. 기관519건의 위치를 기본키로 찾고 반경을 판정하며 병상 LEFT JOIN을 유지했습니다.
-	3. 서울시청10km·limit100에서46건의 모든 컬럼·정렬을 대조하고, 각1회 워밍업 후 두 SQL을3회씩 번갈아 실행했습니다.
-	### 결과
-	1. 병원 기본키 탐색 loops14,756회 대신 위치 기본키 탐색 loops519회를 수행했습니다. 개별 SQL 요청 수가 아닙니다.
-	2. 최종46건의 값과 거리/hpid 정렬 순서를 유지했습니다.
-	3. EXPLAIN ANALYZE 계측 실행시간 중앙값256 →9.18ms로 감소했습니다. API p95·동시 부하 성능 개선율과 구분합니다.
-	[DDL](https://github.com/jongmine/curelingo-backend/blob/release-v2/src/main/resources/db/20261011-bed-refresh.sql) · [계측 SQL·반복 계획](https://github.com/jongmine/curelingo-backend/blob/release-v2/docs/verification.md)
+
+### 문제 원인
+![emergency-problem-simple](evidence/images/emergency-problem-simple.png)
+1. 공간 후보14,756건에 대해 병원 기본키 탐색을 반복한 뒤 응급실 운영 여부를 검사했습니다.
+2. 전국 병원79,019건 중 응급실 운영 기관은519건(약0.66%)이므로 이 조건부터 후보를 줄이는 경로를 비교했습니다.
+3. 병상 정보가 없는 기관도 목록에 남겨야 하므로 병상 테이블부터 조회하는 방식은 채택하지 않았습니다.
+### 해결 과정
+![emergency-solution-simple](evidence/images/emergency-solution-simple.png)
+1. (emergency_room_open, active, hpid) 복합 인덱스를 추가하고 hospital을 시작점으로 조회했습니다.
+2. 기관519건의 위치를 기본키로 찾고 반경을 판정하며 병상 LEFT JOIN을 유지했습니다.
+3. 서울시청10km·limit100에서46건의 모든 컬럼·정렬을 대조하고, 각1회 워밍업 후 두 SQL을3회씩 번갈아 실행했습니다.
+### 결과
+1. 병원 기본키 탐색 loops14,756회 대신 위치 기본키 탐색 loops519회를 수행했습니다. 개별 SQL 요청 수가 아닙니다.
+2. 최종46건의 값과 거리/hpid 정렬 순서를 유지했습니다.
+3. EXPLAIN ANALYZE 계측 실행시간 중앙값256 →9.18ms로 감소했습니다. API p95·동시 부하 성능 개선율과 구분합니다.
+[DDL](https://github.com/jongmine/curelingo-backend/blob/release-v2/src/main/resources/db/20261011-bed-refresh.sql) · [계측 SQL·반복 계획](https://github.com/jongmine/curelingo-backend/blob/release-v2/docs/verification.md)
+
 </details>
