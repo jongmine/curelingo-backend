@@ -50,6 +50,12 @@ public class EgenImportService {
     }
 
     public long synchronize() {
+        synchronized (client) {
+            return synchronizeExclusive();
+        }
+    }
+
+    private long synchronizeExclusive() {
         if (properties.pageSize() < 1 || properties.pageSize() > 1000) {
             throw new IllegalStateException("EGEN_PAGE_SIZE must be between 1 and 1000");
         }

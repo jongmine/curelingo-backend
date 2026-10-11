@@ -2,6 +2,8 @@ package com.curelingo.curelingo.publicdata.mysql.sync;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import java.sql.Statement;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -15,9 +17,17 @@ public class SyncRunRepository {
     }
 
     public long start() {
-        jdbc.update("INSERT INTO sync_run (status, started_at) VALUES ('RUNNING', ?)", Timestamp.from(Instant.now()));
-        Long id = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
-        return id == null ? 0 : id;
+        GeneratedKeyHolder keys = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            var statement = connection.prepareStatement(
+                    "INSERT INTO sync_run (status, started_at) VALUES ('RUNNING', ?)",
+                    Statement.RETURN_GENERATED_KEYS);
+            statement.setTimestamp(1, Timestamp.from(Instant.now()));
+            return statement;
+        }, keys);
+        Number id = keys.getKey();
+        if (id == null) throw new IllegalStateException("Sync run generated key missing");
+        return id.longValue();
     }
 
     public void progress(long id, int apiRequests, int hospitalRows, int departmentRows, int bedRows) {

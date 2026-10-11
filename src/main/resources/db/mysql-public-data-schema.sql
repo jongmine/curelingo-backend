@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS hospital (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     imported_at TIMESTAMP(6) NOT NULL,
     PRIMARY KEY (hpid),
-    KEY idx_hospital_active_name (active, duty_name)
+    KEY idx_hospital_active_name (active, duty_name),
+    KEY idx_hospital_emergency_active (emergency_room_open, active, hpid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS hospital_location (
@@ -165,4 +166,19 @@ CREATE TABLE IF NOT EXISTS bed_stage (
     fetched_at TIMESTAMP(6) NOT NULL,
     PRIMARY KEY (run_id, hpid),
     CONSTRAINT fk_bed_stage_run FOREIGN KEY (run_id) REFERENCES sync_run (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS egen_daily_budget (
+    budget_date DATE NOT NULL PRIMARY KEY,
+    requests INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS bed_refresh_state (
+    id TINYINT NOT NULL PRIMARY KEY,
+    last_success_at TIMESTAMP(6) NULL,
+    last_attempt_at TIMESTAMP(6) NOT NULL,
+    status VARCHAR(16) NOT NULL,
+    source_rows INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;

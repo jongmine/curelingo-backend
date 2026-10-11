@@ -1,6 +1,7 @@
 package com.curelingo.curelingo.publicdata.mysql.egen;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -25,15 +26,19 @@ public class EgenClient {
     public static final String BED_STATUS_PATH = "/ErmctInfoInqireService/getEmrrmRltmUsefulSckbdInfoInqire";
 
     private final EgenProperties properties;
+    private final EgenRequestBudget budget;
     private final RestClient restClient;
     private final AtomicInteger requests = new AtomicInteger();
     private volatile long lastRequestNanos;
 
-    public EgenClient(EgenProperties properties) {
+    public EgenClient(EgenProperties properties, EgenRequestBudget budget,
+                      @Value("${curelingo.public-data.sync.connect-timeout:5s}") Duration connectTimeout,
+                      @Value("${curelingo.public-data.sync.read-timeout:20s}") Duration readTimeout) {
+        this.budget = budget;
         this.properties = properties;
-        HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+        HttpClient httpClient = HttpClient.newBuilder().connectTimeout(connectTimeout).build();
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
-        requestFactory.setReadTimeout(Duration.ofSeconds(20));
+        requestFactory.setReadTimeout(readTimeout);
         this.restClient = RestClient.builder()
                 .baseUrl(properties.baseUrl())
                 .requestFactory(requestFactory)
@@ -51,10 +56,11 @@ public class EgenClient {
 
     public EgenPage fetch(String path, int pageNo, int pageSize, Map<String, String> filters) {
         if (properties.apiKey() == null || properties.apiKey().isBlank()) {
-            throw new IllegalStateException("Set CURELINGO_PUBLIC_DATA_SYNC_API_KEY before starting the importer");
+            throw new IllegalStateException("Set EGEN_API_KEY before starting the importer");
         }
         for (int attempt = 0; attempt < 3; attempt++) {
             waitForRequestSlot();
+            budget.reserve();
             int requestNumber = requests.incrementAndGet();
             if (requestNumber > properties.maxRequestsPerRun()) {
                 throw new IllegalStateException("E-Gen request budget exceeded for this run");
@@ -94,7 +100,12 @@ public class EgenClient {
 
         JsonNode body = response.path("body");
         if (!body.has("totalCount")) throw new EgenApiException("MISSING_TOTAL_COUNT");
-        int totalCount = body.path("totalCount").asInt(-1);
+        int totalCount;
+        try {
+            totalCount = Integer.parseInt(body.path("totalCount").asText());
+        } catch (NumberFormatException invalid) {
+            throw new EgenApiException("INVALID_TOTAL_COUNT");
+        }
         if (totalCount < 0) throw new EgenApiException("INVALID_TOTAL_COUNT");
 
         JsonNode itemsNode = body.path("items").path("item");
